@@ -1,0 +1,29 @@
+ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface] [-b bind_address] [-c cipher_spec] [-D [bind_address:]port] [-E log_file]
+    [-e escape_char] [-F configfile] [-I pkcs11] [-i identity_file] [-J destination] [-L address] [-l login_name] [-m mac_spec]
+    [-O ctl_cmd] [-o option] [-p port] [-Q query_option] [-R address] [-S ctl_path] [-W host:port] [-w local_tun[:remote_tun]] destination
+    [command]
+
+
+  -L [bind_address:]port:host:hostport
+  -L [bind_address:]port:remote_socket
+  -L local_socket:host:hostport
+  -L local_socket:remote_socket
+          Specifies that connections to the given TCP port or Unix socket on the local (client) host are to be forwarded to the given host
+          and port, or Unix socket, on the remote side.  This works by allocating a socket to listen to either a TCP port on the local side,
+          optionally bound to the specified bind_address, or to a Unix socket.  Whenever a connection is made to the local port or socket,
+          the connection is forwarded over the secure channel, and a connection is made to either host port hostport, or the Unix socket
+          remote_socket, from the remote machine.
+
+  -R [bind_address:]port:host:hostport
+  -R [bind_address:]port:local_socket
+  -R remote_socket:host:hostport
+  -R remote_socket:local_socket
+  -R [bind_address:]port
+          Specifies that connections to the given TCP port or Unix socket on the remote (server) host are to be forwarded to the local side.
+
+          This works by allocating a socket to listen to either a TCP port or to a Unix socket on the remote side.  Whenever a connection is
+          made to this port or Unix socket, the connection is forwarded over the secure channel, and a connection is made from the local
+          machine to either an explicit destination specified by host port hostport, or local_socket, or, if no explicit destination was
+          specified, ssh will act as a SOCKS 4/5 proxy and forward connections to the destinations requested by the remote SOCKS client.
+
+  -N      Do not execute a remote command.  This is useful for just forwarding ports.
