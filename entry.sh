@@ -46,7 +46,13 @@ else
   fi
 fi
 
-if [ "${SSH_USER}" != "ssh" ]; then
+if [ -z "$SSH_USER" -o "$SSH_USER" = "root" ]; then
+  echo "SSH_USER must set to non-root user"
+  exit 1
+fi
+
+echo "SSH_USER is ${SSH_USER}"
+if [ "${SSH_USER}" != "root" ]; then
   echo "adding new user ${SSH_USER}"
   addgroup ${SSH_USER}
   adduser ${SSH_USER} -D -G ${SSH_USER} --shell=/bin/false
@@ -55,8 +61,13 @@ if [ "${SSH_USER}" != "ssh" ]; then
   touch /home/${SSH_USER}/.ssh/authorized_keys
   chown -R ${SSH_USER}:${SSH_USER} /home/${SSH_USER}/.ssh
   chmod 600 /home/${SSH_USER}/.ssh/authorized_keys
-elif [ "${SSH_USER}" = "root" ]; then
-  echo "root is not permit to login"
+  ssh-keygen -b 2048 -t rsa -q -N "" -f /home/${SSH_USER}/.ssh/mykey
+  echo "generating ssh key for ${SSH_USER}"
+  cat /home/${SSH_USER}/.ssh/mykey.pub > /home/${SSH_USER}/.ssh/authorized_keys
+  mkdir -p ${HOME}/.ssh
+  cat /home/${SSH_USER}/.ssh/mykey > ${HOME}/.ssh/id_rsa
+  chmod 0600 ${HOME}/.ssh/id_rsa
+  chmod 600 ${HOME}/.ssh/authorized_keys
 fi
 
 if [ ! -z "$SSH_PUBLIC_KEY" ]; then
@@ -66,7 +77,7 @@ fi
 
 if [ -f "/config/authorized_keys" ]; then
   echo "overriding authorized_keys with file /config/authorized_keys"
-  cat /config/authorized_keys > /home/${SSH_USER}/.ssh/authorized_keys
+  cat /config/authorized_keys >> /home/${SSH_USER}/.ssh/authorized_keys
 fi
 
 if [ ! -d "/var/run/sshd" ]; then
@@ -78,4 +89,15 @@ echo "[[[[[[[[[[[[[[[[[[[[ /etc/ssh/sshd_config ]]]]]]]]]]]]]]]]]]]]"
 cat /etc/ssh/sshd_config
 echo "==============================================================="
 
-exec "$@"
+USER=`whoami`
+echo "Current user is $USER, HOME is $HOME"
+
+if [ ! -z "${SSH_ARGS}" ]; then
+  echo "starting sshd and ssh"
+  /usr/sbin/sshd -e
+  echo "ssh -o 'StrictHostKeyChecking no' ${SSH_USER}@localhost -N -v ${SSH_ARGS}"
+  ssh -o 'StrictHostKeyChecking no' -p ${SSH_PORT} ${SSH_USER}@localhost -N -v ${SSH_ARGS}
+else
+  echo "starting sshd"
+  /usr/sbin/sshd -D -e
+fi
